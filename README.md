@@ -24,3 +24,5 @@
     
 
  适合打打难度34的养老咸鱼玩家
+ 
+ 图片文件在assets.py和img文件夹中，模拟器交互在utils.py中，执行逻辑在gt_auto_farm.py中，图片处理在cv.py中，部分函数参考pcrfarm项目。
