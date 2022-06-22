@@ -39,8 +39,9 @@ class B_Automator:
         except Exception as e:
             print('链接错误', e)
 
+        print()
         self.appRunning = False
-        os.system('python -m uiautomator2 init')
+        os.system('python -m uiautomator2 init')  # 必须
         print('正在拉起应用.', end='')
         while True:
             # 判断进程是否在前台, 最多等待20秒，否则唤醒到前台
@@ -69,6 +70,11 @@ class B_Automator:
         else:
             return False
 
+    def test_thershold(self, screen_shot, template_paths, threshold=0.8):
+        screen_shot = np.array(Image.open(f'{screen_shot}'))
+        zhongxings, max_vals = UIMatcher.findpic(screen_shot, template_paths=template_paths)
+        print(f"{name[3:-4]}-{round(max_vals[i], 3):.4f}{zhongxings}", end=' ')
+
     def get_butt_stat(self, screen_shot, template_paths, threshold=0.8, crop=0):
         # 此函数输入要判断的图片path,屏幕截图, 阈值,   返回大于阈值的path,坐标字典,
         return_dic = {}
@@ -88,8 +94,8 @@ class B_Automator:
             x = self.dWidth * x
             y = self.dHeight * y
         else:
-            x += random.random() * random_click
-            y += random.random() * random_click
+            x += random.random()*random_click
+            y += random.random()*random_click
         time.sleep(0.4)
         try:
             self.d.click(x, y)
@@ -112,17 +118,31 @@ class B_Automator:
             if timeout == 0:
                 print(f'找不到-{name}')
                 return -1
-        print(f'\n查从画面寻找{name}的坐标')
+        print(f'\n从画面寻找{name}的坐标')
         if self.is_there_img(img=name):
-            x, y = self.is_there_img(img=name)
-            self.click_xy(x, y)
-            time.sleep(timeout)
-            return 1
+            time.sleep(1)
+            try:
+                x, y = self.is_there_img(img=name)
+                self.click_xy(x, y)
+                time.sleep(timeout)
+                return 1
+            except:
+                return -1
         else:
-            raise ValueError('找不到，退出寻找')
+            return 0
+
+
+    def pinch(self):
+        self.d.pinch_in(percent=100, steps=10)
+        self.d.pinch_out()
 
     def drag(self, sx, sy, ex, ey):
         self.d.drag(sx, sy, ex, ey)
+
+    def home(self):
+        if self.is_there_img('battle'):
+            return 1
+        return 0
 
     def cv_imread(self, file_path):
         cv_img = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), -1)
@@ -143,7 +163,7 @@ class B_Automator:
                 if count % 8 == 0:
                     print('\n')
 
-    def click_get_into_game(self):
+    def click_11_get_into_game(self):
         while not self.is_there_img(img='battle'):
             time.sleep(0.5)
             print('点击左上角进入游戏')

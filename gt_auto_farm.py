@@ -6,11 +6,13 @@ import time
 # 启动并登录游戏到主界面
 def enter_game(a: B_Automator):
     a.start()
-    a.click_get_into_game()
+    a.click_11_get_into_game()
 
 
+def back2havenhold(a: B_Automator):
+    a.click_11_get_into_game()
 # 点击事件直到另一事件出现
-def click_until(a: B_Automator, target='确认', till='瓶盖商店'):
+def click_untill(a: B_Automator, target='确认', till='瓶盖商店'):
     counter = 0
     while True:
         time.sleep(1)
@@ -37,6 +39,8 @@ def choose_reward(a: B_Automator, target=''):
         # 选择逻辑 优先选高级 次选不选择 最后随机选择
         if a.is_there_img(img='高阶神器'):
             a.click_xy(xy=a.is_there_img(img='高阶神器'))
+        elif a.is_there_img(img='净化'):
+            a.click_xy(xy=a.is_there_img(img='净化'))
         elif a.is_there_img(img='不选择可选'):
             a.click_xy(xy=a.is_there_img(img='不选择可选'))
         else:
@@ -91,8 +95,18 @@ def into_battle(a: B_Automator):
 # 进入事件
 def into_event(a: B_Automator):
     print('进入事件\t', end='')
+    time.sleep(3)
+    # 判断是什么事件
+    if a.is_there_img(img='阿加莎店铺'):
+        print('阿加莎店铺事件')
+        a.click('退出')
+        a.click('确认')
+        return 1
+    elif a.is_there_img('确认'):
+        a.click('确认')
     counter = 0
     while True:
+        print('进入其他事件')
         time.sleep(1)
         counter += 1
         if counter > 3:
@@ -106,6 +120,23 @@ def into_event(a: B_Automator):
         r2 = a.click('确认')
         if r1 or r2:
             return 1
+
+
+def del_itme(a: B_Automator):
+    while True:
+        print('处理多余神器')
+        time.sleep(1)
+        if xy := a.is_there_img(img='任意低级神器'):
+            a.click_xy(xy=xy)
+        elif xy := a.is_there_img(img='任意中级神器'):
+            a.click_xy(xy=xy)
+        else:
+            # 第一个神器
+            a.click_xy(652,293)
+        r1 = a.click('处理')
+        r2 = a.click('确认')
+        if r1 or r2:
+            break
 
 
 # 进入卡马逊
@@ -128,6 +159,7 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
             a.click('卡马逊难度右', timeout=1)
             a.click(f'卡马逊难度{level % 3}', timeout=1)
         a.click('挑战副本')
+        time.sleep(3)
         # 行走卡马逊进场动画
         # 可能出现的事件 支援神器
     else:
@@ -138,14 +170,15 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
         if item_coordinate:
             a.click_xy(xy=item_coordinate)
         a.click_xy(550 + 100 * (item_support % 5), 200 + 100 * (item_support // 5))
-        a.click_xy(867, 679)
         a.click('确认')
     if a.is_there_img(img='瓶盖商店'):
-        print('进入挑战界面,循环执行 寻找战斗-开始战斗-选择奖励  或者 寻找战斗-开始战斗-失败推出')
         while True:
+            print('进入挑战界面')
             time.sleep(1)
             if a.is_there_img(img='确认'):
-                click_until(a, target='确认', till='挑战结束')
+                click_untill(a, target='确认', till='挑战结束')
+            elif a.is_there_img(img='进入'):
+                click_untill(a, target='进入', till='战斗中')
             elif a.is_there_img(img='pointer'):
                 print('点击箭头下方进入战斗或事件')
                 result = a.is_there_img(img='pointer')
@@ -173,6 +206,7 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
                                     break
                             elif a.is_there_img(img='瓶盖商店'):
                                 print('噶了')
+                                break
                     elif a.is_there_img(img='精英战斗'):
                         a.click('进入', wait='精英战斗')
                         into_battle(a)
@@ -194,24 +228,19 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
                                 break
                     elif a.is_there_img(img='处理不可选'):
                         while True:
-                            print('处理多余神器')
-                            time.sleep(1)
-                            a.click_xy(652, 293)
-                            r1 = a.click('处理')
-                            r2 = a.click('确认')
-                            if r1 or r2:
+                            if del_item(a):
                                 break
                     elif a.is_there_img(img='阿加莎店铺'):
                         while True:
                             print('阿加莎商店')
                             time.sleep(1)
-                            if click_until(a, target='退出'):
+                            if click_untill(a, target='退出'):
                                 break
                     elif a.is_there_img(img='确认'):
                         while True:
                             print('确认')
                             time.sleep(1)
-                            r = click_until(a, target='确认')
+                            r = click_untill(a, target='确认')
                             if r:
                                 break
             else:
@@ -223,13 +252,46 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
                     print('drag')
                     a.drag(600, 400, 500, 500)
                 if a.is_there_img(img='确认'):
-                    click_until(a)
+                    click_untill(a)
+
+
+# 日常
+def daliy_quest(a: B_Automator):
+    a.click('探险')
+    a.click('圆形角斗场')
+    click_untill(a, target='确认', till='角斗场开始战斗')
+    if a.is_there_img(img='角斗场开始战斗'):
+        while True:
+            if a.is_there_img(img='44确认'):
+                a.click('44确认')
+            elif a.is_there_img(img='角斗场开始战斗'):
+                a.click("角斗场开始战斗")
+                time.sleep(1)
+                if a.is_there_img(img='44无票'):
+                    print('无票')
+                    a.click('确认')
+                    back2havenhold(a)
+                    break
+                a.click("角斗场开始战斗2")
+
+                while a.is_there_img(img='战斗倍速'):
+                    time.sleep(1)
+                    print('44战斗中')
+                if a.is_there_img(img='本场结果'):
+                    a.click('44确认')
+                    break
+            elif a.is_there_img(img='角斗场开始战斗_无票'):
+                print('44无票退出')
+                break
 
 
 if __name__ == "__main__":
     a = B_Automator()
     enter_game(a)
     # 卡马逊 难度5 道具支援第九个
-    enter_camazon(a, level=5, item_support=9)
+    # 箭头下方 神器 bug
+    daliy_quest(a)
+
+    enter_camazon(a, level=4, item_support=9)
 
     # a.test()
