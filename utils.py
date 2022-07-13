@@ -57,17 +57,20 @@ class B_Automator:
                 continue
 
     def is_there_img(self, screen=0, img='battle', threshold=0.8, crop=0, debug=False):
-        if type(screen) == int:  # it means get all stats from image name
-            screen = self.realtime_screenshot()
-        if not img.endswith('.jpg'):
-            img = _mark_path.format(img)
+        try:
+            if type(screen) == int:  # it means get all stats from image name
+                screen = self.realtime_screenshot()
+            if not img.endswith('.jpg'):
+                img = _mark_path.format(img)
 
-        active_path = self.get_butt_stat(screen, [img], threshold, crop)
-        if img in active_path:
-            if debug:
-                print(debug, active_path, end='\n')
-            return active_path[img]
-        else:
+            active_path = self.get_butt_stat(screen, [img], threshold, crop)
+            if img in active_path:
+                if debug:
+                    print(debug, active_path, end='\n')
+                return active_path[img]
+            else:
+                return False
+        except:
             return False
 
     def test_thershold(self, screen_shot, template_paths, threshold=0.8):
@@ -96,7 +99,7 @@ class B_Automator:
         else:
             x += random.random()*random_click
             y += random.random()*random_click
-        time.sleep(0.4)
+        time.sleep(0.2)
         try:
             self.d.click(x, y)
             print(f"点击{usage}{x, y}", end=' ')
@@ -104,32 +107,25 @@ class B_Automator:
             print(f"{x, y}失败")
 
     def click(self, name, wait='', timeout=3):
+        timeout = timeout*3
         if name in _coordinates:
             x, y = _coordinates[name]
             self.click_xy(x, y, usage=name)
-            time.sleep(timeout)
+            time.sleep(0.5)
             return 1
         if not wait:
             wait = name
-
-        while not self.is_there_img(img=wait):
-            time.sleep(1)
-            timeout -= 1
-            if timeout == 0:
-                print(f'找不到-{name}')
-                return -1
-        print(f'\n从画面寻找{name}的坐标')
-        if self.is_there_img(img=name):
-            time.sleep(1)
-            try:
-                x, y = self.is_there_img(img=name)
-                self.click_xy(x, y)
-                time.sleep(timeout)
+        while timeout:
+            time.sleep(0.3)
+            if xy := self.is_there_img(img=name):
+                time.sleep(0.3)
+                self.click_xy(xy=xy)
                 return 1
-            except:
+            timeout -= 1
+            if timeout <= 0:
+                print(f'找不到-【{name}】，退出寻找')
                 return -1
-        else:
-            return 0
+
 
 
     def pinch(self):

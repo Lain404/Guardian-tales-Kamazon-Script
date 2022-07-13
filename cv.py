@@ -28,7 +28,8 @@ class UIMatcher:
         if crop:
             print(crop, _screen.shape)
             _screen = _screen[crop[0]:crop[1], crop[2]:crop[3]]
-            cv2.imshow('1', _screen)
+
+            #cv2.imshow('1', _screen)
             cv2.waitKey(0)
         _template = cv_imread(template)
         res = cv2.matchTemplate(_screen, _template, cv2.TM_CCOEFF_NORMED)
@@ -68,7 +69,7 @@ class UIMatcher:
         plt.cla()
         img4 = cv2.cvtColor(screen_show, cv2.COLOR_BGR2RGB)
         img4 = np.rot90(img4, -1)
-        plt.imshow(img4)
+        #plt.imshow(img4)
         plt.pause(0.01)
         return centeral, max_vals
 
@@ -85,7 +86,7 @@ class UIMatcher:
         cv2.circle(screen, (index_1[1], index_1[0] + 63), 10, (255, 0, 0), -1)
 
         plt.cla()
-        plt.imshow(screen)
+        #plt.imshow(screen)
         plt.pause(0.01)
         print(len(np.argwhere(binary == 255)), len(np.argwhere(binary == 0)))
         return index_1[1] / screen.shape[1], (index_1[0] + 63) / screen.shape[0]
