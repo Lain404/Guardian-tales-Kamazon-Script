@@ -1,5 +1,6 @@
 import os
 from utils import B_Automator
+from datetime import datetime, timedelta
 import time
 
 
@@ -14,7 +15,6 @@ def back2havenhold(a: B_Automator):
 
 # 点击事件直到另一事件出现
 def click_untill(a: B_Automator, target='确认', till='瓶盖商店', untill=''):
-
     counter = 3
     while True:
         time.sleep(0.5)
@@ -44,18 +44,19 @@ def choose_reward(a: B_Automator, target=''):
     counter = 0
     while True:
         time.sleep(0.5)
+        a.save_screenshot()
         # 选择逻辑 优先选高级 次选不选择 最后随机选择
         if xy := a.is_there_img(img='战利品高阶神器'):
             a.click_xy(xy=xy)
-        elif xy :=a.is_there_img(img='净化'):
+        elif xy := a.is_there_img(img='净化'):
             a.click_xy(xy=xy)
             a.click('确认')
             return 1
-        elif xy :=a.is_there_img(img='不选择可选'):
+        elif xy := a.is_there_img(img='不选择可选'):
             a.click_xy(xy=xy)
             a.click('确认')
             return 1
-        elif xy :=a.is_there_img(img='战利品中阶神器'):
+        elif xy := a.is_there_img(img='战利品中阶神器'):
             a.click_xy(xy=xy)
         else:
             print('随机选择')
@@ -73,6 +74,7 @@ def choose_reward(a: B_Automator, target=''):
             if xy := a.is_there_img(img='确认'):
                 a.click_xy(xy=xy)
                 return 1
+
 
 # 选择恢复区效果
 def choose_effect(a: B_Automator):
@@ -106,9 +108,23 @@ def into_battle(a: B_Automator):
         if a.is_there_img(img='战斗中'):
             print('战斗开始', end='')
             break
+    start_time = datetime.now()
     while a.is_there_img(img='战斗中'):
-        print('战斗中...')
-        time.sleep(3)
+        print('战斗中...',end='')
+        if datetime.now() - start_time > timedelta(seconds=50):
+            print('检测到超时可能，退出战斗。')
+            a.click('战斗中')
+            time.sleep(1)
+            a.click('确认')
+            time.sleep(3)
+            return -1
+        if 0 in a.get_hp():
+            print('检测到角色阵亡，退出战斗')
+            a.click('战斗中')
+            time.sleep(1)
+            a.click('确认')
+            time.sleep(3)
+        time.sleep(1)
     print('战斗结束')
     return 1
 
@@ -118,13 +134,14 @@ def into_event(a: B_Automator):
     print('进入事件\t', end='')
     time.sleep(3)
     # 判断是什么事件
+    a.save_screenshot()
     if a.is_there_img(img='阿加莎店铺'):
         print('阿加莎店铺事件')
         a.click('退出')
         a.click('确认')
         return 1
-    elif a.is_there_img('确认'):
-        a.click('确认')
+    elif xy := a.is_there_img('确认'):
+        a.click_xy(xy=xy)
     counter = 0
     while True:
         print('进入其他事件')
@@ -163,9 +180,11 @@ def del_item(a: B_Automator):
             a.click_xy(xy=xy)
         elif xy := a.is_there_img(img='处理任意中阶神器'):
             a.click_xy(xy=xy)
+        elif xy := a.is_there_img(img='event/摇钱树'):
+            a.click_xy(xy=xy)
         else:
             # 第一个神器
-            a.click_xy(652,293)
+            a.click_xy(652, 293)
         r1 = a.click('处理')
         r2 = a.click('确认')
         if r1 or r2 or counter > 2:
@@ -175,26 +194,28 @@ def del_item(a: B_Automator):
 # 进入卡马逊
 def enter_camazon(a: B_Automator, level=4, item_support=1):
     a.click('探险')
+    time.sleep(2)
     a.click('卡马逊乐园')
-    if not a.is_there_img(img='挑战结束'):
-        print('进入难度选择')
+    time.sleep(2)  # 等待
+    if not a.is_there_img(img='挑战结束'):  # 不完全条件
+        time.sleep(2)
         a.click('挑战')
+        print('进入难度选择')
         if level < 4:
             a.click('卡马逊难度左', timeout=1, )
             a.click('卡马逊难度左', timeout=1)
-            a.click(f'卡马逊难度{level % 3 +1}', timeout=1)
+            a.click(f'卡马逊难度{level % 3}', timeout=1)
         elif level < 7:
             a.click('卡马逊难度左', timeout=1)
             a.click('卡马逊难度左', timeout=1)
             a.click('卡马逊难度右', timeout=1)
-            a.click(f'卡马逊难度{level % 3 +1}', timeout=1)
+            a.click(f'卡马逊难度{level % 3}', timeout=1)
         else:
             a.click('卡马逊难度右', timeout=1)
             a.click('卡马逊难度右', timeout=1)
-            a.click(f'卡马逊难度{level % 3 +1}', timeout=1)
+            a.click(f'卡马逊难度{level % 3}', timeout=1)
+        time.sleep(1)
         a.click('挑战副本')
-        time.sleep(3)
-        a.click('确认')
         # 行走卡马逊进场动画
         # 可能出现的事件 支援神器
     else:
@@ -206,15 +227,14 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
             a.click_xy(xy=item_coordinate)
         a.click_xy(550 + 100 * (item_support % 5), 200 + 100 * (item_support // 5))
         a.click('确认')
-        a.click_xy(640, 550) # 存在两个确认，要点中间那个。
-    if a.is_there_img(img='挑战'):
-        a.click('挑战')
+        a.click_xy(640, 550)  # 存在两个确认，要点中间那个。
     elif a.is_there_img(img='瓶盖商店'):
         while True:
             print('进入挑战界面')
             time.sleep(0.5)
-            if a.is_there_img(img='确认'):
-                click_untill(a, target='确认', till='挑战结束')
+            if xy := a.is_there_img(img='确认'):
+                a.click_xy(xy=xy)
+                # click_untill(a, target='确认', till='挑战结束')
             elif xy := a.is_there_img(img='进入'):
                 a.click_xy(xy=xy)
                 # click_untill(a, target='进入', till='战斗中')
@@ -222,7 +242,7 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
                 print('\n进入战后奖励选择')
                 r = choose_reward(a)
             elif result := a.is_there_img(img='pointer'):
-                x_limit = 1150
+                x_limit = 1100
                 y_limit = 386
                 if result[0] > x_limit and result[1] + 60 < y_limit:
                     print('箭头位于禁区，拖拽')
@@ -243,10 +263,13 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
                         break
                     if a.is_there_img(img='普通战斗'):
                         a.click('进入')
-                        into_battle(a)
+                        ret = into_battle(a)
+                        if ret == -1:
+                            break
                         counter = 0
                         while True:
                             print('战斗结束阶段')
+                            time.sleep(1.8)
                             if a.is_there_img(img='无法战斗'):
                                 print('存在无法战斗成员')
                                 break
@@ -304,15 +327,17 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
 # 日常
 def daliy_quest(a: B_Automator):
     a.click('探险')
+    time.sleep(2)
     a.click('圆形角斗场')
-    click_untill(a, target='确认', till='角斗场开始战斗')
+    time.sleep(1)
+    a.click('确认')  # 存在战斗记录的话
     if a.is_there_img(img='角斗场开始战斗'):
         while True:
             if xy := a.is_there_img(img='44确认'):
-                #a.click('44确认')
+                # a.click('44确认')
                 a.click_xy(xy=xy)
             elif a.is_there_img(img='角斗场开始战斗'):
-                a.click("确认", timeout=2) # 活动积分
+                a.click("确认", timeout=2)  # 活动积分
                 a.click("角斗场开始战斗")
                 time.sleep(1)
                 if a.is_there_img(img='44无票'):
@@ -331,21 +356,29 @@ def daliy_quest(a: B_Automator):
                 print('44无票退出')
                 break
             elif xy := a.is_there_img(img='确认'):
-                #a.click('确认')
+                # a.click('确认')
                 a.click_xy(xy=xy)
             elif xy := a.is_there_img(img='44确认'):
-                #a.click('44确认')
+                # a.click('44确认')
                 a.click_xy(xy=xy)
     # 卡马逊 难度5 道具支援第九个
     # 箭头下方 神器 bug
+
+
+def test(a: B_Automator):
+    a.click('探险')
+    time.sleep(1)
+    # 画面存在了 但是点击响应需要延迟？
+    a.click('圆形角斗场')
 
 
 if __name__ == "__main__":
     a = B_Automator()
     a.start()
     enter_game(a)
-    #daliy_quest(a)
-    #choose_reward(a)
+    # test(a)
+    # daliy_quest(a)
+    # choose_reward(a)
     enter_camazon(a, level=4, item_support=9)
 
     # a.test()

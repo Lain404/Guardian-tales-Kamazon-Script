@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 import os
 from assets import _mark_path, _mark, all_mark_piece, search_mark, _coordinates
+from datetime import datetime
 
 app_name = "com.bilibili.snake"
 emulator_port = 11509
@@ -34,7 +35,7 @@ class B_Automator:
                     time.sleep(2)
                 else:
                     break
-            self.d = u2.connect_usb()
+            self.d = u2.connect_usb(f'127.0.0.1:{emulator_port}')
             print(self.d)
         except Exception as e:
             print('链接错误', e)
@@ -56,14 +57,24 @@ class B_Automator:
                 self.appRunning = False
                 continue
 
-    def is_there_img(self, screen=0, img='battle', threshold=0.8, crop=0, debug=False):
+    def is_there_img(self, screen=0, img='battle', threshold=0.81, crop=0, debug=False):
         try:
             if type(screen) == int:  # it means get all stats from image name
                 screen = self.realtime_screenshot()
             if not img.endswith('.jpg'):
                 img = _mark_path.format(img)
-
-            active_path = self.get_butt_stat(screen, [img], threshold, crop)
+            if not crop or len(crop) == 1:
+                active_path = self.get_butt_stat(screen, [img], threshold, crop)
+            else:
+                # 默认传入一个box组 [[4],.....]
+                result = []
+                for box in crop:
+                    active_path = self.get_butt_stat(screen, [img], threshold, box)
+                    if img in active_path:
+                        result.append(True)
+                    else:
+                        result.append(False)
+                    return result
             if img in active_path:
                 if debug:
                     print(debug, active_path, end='\n')
@@ -97,8 +108,8 @@ class B_Automator:
             x = self.dWidth * x
             y = self.dHeight * y
         else:
-            x += random.random()*random_click
-            y += random.random()*random_click
+            x += random.random() * random_click
+            y += random.random() * random_click
         time.sleep(0.2)
         try:
             self.d.click(x, y)
@@ -107,7 +118,7 @@ class B_Automator:
             print(f"{x, y}失败")
 
     def click(self, name, wait='', timeout=3):
-        timeout = timeout*3
+        timeout = timeout * 3
         if name in _coordinates:
             x, y = _coordinates[name]
             self.click_xy(x, y, usage=name)
@@ -125,8 +136,6 @@ class B_Automator:
             if timeout <= 0:
                 print(f'找不到-【{name}】，退出寻找')
                 return -1
-
-
 
     def pinch(self):
         self.d.pinch_in(percent=100, steps=10)
@@ -167,3 +176,66 @@ class B_Automator:
         self.dWidth, self.dHeight = self.d.window_size()
         print('进入浮游城')
         return True
+
+    def save_screenshot(self):
+        path = "D:\_Projects\_Github\ADB\gt_scripts\img\\resource\\auto\\"
+        name = str(datetime.now()).replace(':', '')
+        path = path + name + '.jpg'
+        print(f'保存图片到{path}')
+        screen_shot_ = self.realtime_screenshot()
+        cv2.imwrite(path, screen_shot_)
+
+    def get_hp(self):
+        screen = self.realtime_screenshot()
+        # screen = cv_imread("D:\_Projects\_Github\ADB\gt_scripts\Screenshot_20220622-053824.png")
+        # cv2.imshow('1', screen)
+        # cv2.waitKey(0)
+        # screen = UIMatcher.RotateClockWise90(screen)
+
+        def count_none_zero(crop_img):
+            hp = 0
+            nhp = 0
+            armor = 0
+            hp_s = [47, 205, 74]
+            armor_s = [161, 161, 161]
+            nhp_s = [33, 54, 33]
+            p_x, p_y, d = crop_img.shape
+            # cv2.imshow('1', crop_img)
+            # cv2.waitKey(0)
+            for color in crop_img[0]:
+                # [[3].....]
+                if (color == hp_s).all():
+                    hp += 1
+                elif (color == nhp_s).all():
+                    nhp += 1
+                elif (color == armor_s).all():
+                    armor += 1
+                else:
+                    pass
+            if armor == 0:
+                if hp == 0:
+                    life = 0
+                else:
+                    life = hp / (hp + nhp)
+            else:
+                life = 1 + armor / (hp + 1)
+            # (armor, hp, nhp, life)
+            return round(life, 3)
+
+        up = 125
+        down = 132
+        left = 25
+        interval_x = 70
+        bar_x = 50
+        total_hp = []
+        for i in range(4):
+            total_hp.append(
+                count_none_zero(screen[up + 2:up + 3, interval_x * i + left:interval_x * i + left + bar_x]))
+        print('角色Hp ', total_hp)
+        return total_hp
+
+
+if __name__ == "__main__":
+    # b = B_Automator()
+    # b.save_screenshot()
+    B_Automator.get_hp()
