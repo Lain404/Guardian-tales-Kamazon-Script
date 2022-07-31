@@ -7,6 +7,14 @@ import time
 # 启动并登录游戏到主界面
 def enter_game(a: B_Automator):
     a.click_11_get_into_game()
+    time.sleep(1)
+    while a.is_there_img(img='close'):
+        a.click('close')
+        time.sleep(1)
+    if a.is_there_img(img='领取奖励'):
+        a.click('领取奖励')
+        time.sleep(1)
+        a.click('确认')
 
 
 def back2havenhold(a: B_Automator):
@@ -109,8 +117,9 @@ def into_battle(a: B_Automator):
             print('战斗开始', end='')
             break
     start_time = datetime.now()
+    death_flag = 0
     while a.is_there_img(img='战斗中'):
-        print('战斗中...',end='')
+        print('战斗中...', end='')
         if datetime.now() - start_time > timedelta(seconds=50):
             print('检测到超时可能，退出战斗。')
             a.click('战斗中')
@@ -119,6 +128,7 @@ def into_battle(a: B_Automator):
             time.sleep(3)
             return -1
         if 0 in a.get_hp():
+            # 假设4个角色不会在一秒内同时暴毙
             print('检测到角色阵亡，退出战斗')
             a.click('战斗中')
             time.sleep(1)
@@ -194,8 +204,9 @@ def del_item(a: B_Automator):
 # 进入卡马逊
 def enter_camazon(a: B_Automator, level=4, item_support=1):
     a.click('探险')
-    time.sleep(2)
+    time.sleep(1)
     a.click('卡马逊乐园')
+    a.click('确认', timeout=3)
     time.sleep(2)  # 等待
     if not a.is_there_img(img='挑战结束'):  # 不完全条件
         time.sleep(2)
@@ -233,7 +244,10 @@ def enter_camazon(a: B_Automator, level=4, item_support=1):
             print('进入挑战界面')
             time.sleep(0.5)
             if xy := a.is_there_img(img='确认'):
-                a.click_xy(xy=xy)
+                if a.is_there_img(img='神器到达上限'):
+                    del_item(a)
+                else:
+                    a.click_xy(xy=xy)
                 # click_untill(a, target='确认', till='挑战结束')
             elif xy := a.is_there_img(img='进入'):
                 a.click_xy(xy=xy)

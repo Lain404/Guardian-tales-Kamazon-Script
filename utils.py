@@ -24,7 +24,7 @@ class B_Automator:
         self.d = None
         self.dWidth = Width
         self.dHeight = Height
-
+        self.death_flag = 0
     def start(self):
         try:
             connect_result = os.popen("adb devices").read()
@@ -57,7 +57,7 @@ class B_Automator:
                 self.appRunning = False
                 continue
 
-    def is_there_img(self, screen=0, img='battle', threshold=0.81, crop=0, debug=False):
+    def is_there_img(self, screen=0, img='battle', threshold=0.8, crop=0, debug=False):
         try:
             if type(screen) == int:  # it means get all stats from image name
                 screen = self.realtime_screenshot()
@@ -187,15 +187,17 @@ class B_Automator:
 
     def get_hp(self):
         screen = self.realtime_screenshot()
-        # screen = cv_imread("D:\_Projects\_Github\ADB\gt_scripts\Screenshot_20220622-053824.png")
+
+        # screen = cv_imread("D:\_Projects\_Github\ADB\gt_scripts\Screenshot_20220616-100415.png")
+
+        # screen = UIMatcher.RotateClockWise90(screen)
         # cv2.imshow('1', screen)
         # cv2.waitKey(0)
-        # screen = UIMatcher.RotateClockWise90(screen)
-
         def count_none_zero(crop_img):
             hp = 0
             nhp = 0
             armor = 0
+            shake = 0
             hp_s = [47, 205, 74]
             armor_s = [161, 161, 161]
             nhp_s = [33, 54, 33]
@@ -211,10 +213,13 @@ class B_Automator:
                 elif (color == armor_s).all():
                     armor += 1
                 else:
-                    pass
+                    shake += 1
             if armor == 0:
                 if hp == 0:
-                    life = 0
+                    if shake < 20:
+                        life = 0
+                    else:
+                        life = 0.1
                 else:
                     life = hp / (hp + nhp)
             else:
@@ -232,6 +237,8 @@ class B_Automator:
             total_hp.append(
                 count_none_zero(screen[up + 2:up + 3, interval_x * i + left:interval_x * i + left + bar_x]))
         print('角色Hp ', total_hp)
+        if total_hp == [0, 0, 0, 0]:
+            total_hp = [1, 1, 1, 1]
         return total_hp
 
 
